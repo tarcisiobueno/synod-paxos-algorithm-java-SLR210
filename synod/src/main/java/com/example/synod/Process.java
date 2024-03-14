@@ -5,8 +5,7 @@ import akka.actor.Props;
 import akka.actor.UntypedAbstractActor;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
-import com.example.synod.message.Launch;
-import com.example.synod.message.Membership;
+import com.example.synod.message.*;
 
 import java.util.Random;
 
@@ -46,6 +45,13 @@ public class Process extends UntypedAbstractActor {
         } else if (message instanceof Launch) {
             log.info(this + " - launch received");
             propose(true);
+        } else if (message instanceof Ack) {
+            log.info(this + " - ACK message received");
+            // Send DECIDE to all
+            for (ActorRef actor : processes.references) {
+                Decide dec = new Decide(proposal);
+                actor.tell(dec, getSelf());
+            }
         }
     }
 
