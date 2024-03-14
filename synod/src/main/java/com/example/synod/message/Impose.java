@@ -2,9 +2,10 @@ package com.example.synod.message;
 
 public class Impose {
     public int ballot;
-    public int proposal;
-    public Impose(int ballot, int proposal) {
+    public Boolean v;
+
+    public Impose(int ballot, Boolean v) {
         this.ballot = ballot;
-        this.proposal = proposal;
+        this.v = v;
     }
 }

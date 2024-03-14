@@ -2,11 +2,14 @@ package com.example.synod.message;
 
 public class Gather {
     public int ballot;
-    public int imposeballot;
-    public int est;
-    public Gather(int ballot, int imposeballot, int est) {
+    public int estballot;
+    public Boolean est;
+    public int i;
+
+    public Gather(int ballot, int estballot, Boolean est, int i) {
         this.ballot = ballot;
-        this.imposeballot = imposeballot;
+        this.estballot = estballot;
         this.est = est;
+        this.i = i;
     }
 }
