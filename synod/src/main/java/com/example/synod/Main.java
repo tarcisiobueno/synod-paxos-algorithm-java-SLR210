@@ -2,27 +2,17 @@ package com.example.synod;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import akka.actor.Props;
-import akka.actor.UntypedAbstractActor;
 
-import com.example.synod.message.Launch;
-import com.example.synod.message.Membership;
+import com.example.synod.message.*;
 
 import java.util.*;
 
-public class Main extends UntypedAbstractActor {
+public class Main {
     public static int N = 3;
+    public static int f = 1;
+    public static float alpha = 0.1f;
+    public static int t_le = 10000;
 
-    public Main() {
-        
-    }
-
-    /**
-     * Static method to create an actor
-     */
-    public static Props createActor(int n, int i) {
-        return Props.create(Process.class, () -> new Process(n, i));
-    }
     public static void main(String[] args) throws InterruptedException {
         // Instantiate an actor system
         final ActorSystem system = ActorSystem.create("system");
@@ -31,7 +21,7 @@ public class Main extends UntypedAbstractActor {
         ArrayList<ActorRef> processes = new ArrayList<>();
 
         for (int i = 0; i < N; i++) {
-            final ActorRef a = system.actorOf(Process.createActor(N, i));
+            final ActorRef a = system.actorOf(Process.createActor(N, i, alpha), "p" + i);
             processes.add(a);
         }
 
@@ -41,19 +31,25 @@ public class Main extends UntypedAbstractActor {
             actor.tell(m, ActorRef.noSender());
         }
 
-        // processes.get(0).tell(
-        //         new Launch(),
-        //         ActorRef.noSender());
-
         // Send LAUNCH to all processes
         for (ActorRef actor : processes) {
             actor.tell(new Launch(), ActorRef.noSender());
         }
-
-    }
-
-    @Override
-    public void onReceive(Object message) throws Throwable {
         
+        // Select f processes at random and send them a CRASH message
+        Collections.shuffle(processes);
+        for (int i = 0; i < f; i++) {
+            processes.get(i).tell(new Crash(), ActorRef.noSender());
+        }
+
+        // Sleep for a while
+        Thread.sleep(t_le);
+
+        // Send HOLD to all correct processes but the leader
+        for (int i = 0; i < N; i++) {
+            if (i != f) { // the process in position f is the leader
+                processes.get(i).tell(new Hold(), ActorRef.noSender());
+            }
+        }
     }
 }
