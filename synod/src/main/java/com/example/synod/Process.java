@@ -9,8 +9,6 @@ import akka.event.LoggingAdapter;
 import com.example.synod.message.*;
 
 import java.util.Random;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Process extends UntypedAbstractActor {
 
@@ -39,7 +37,7 @@ public class Process extends UntypedAbstractActor {
     private int readballot;
     private int imposeballot;
     private Boolean estimate;
-    private List<Pair> states;
+    private Pair[] states;
     private State state;
     private Boolean willpropose;
     
@@ -53,7 +51,12 @@ public class Process extends UntypedAbstractActor {
     public Process(int n, int i, float alpha) {
         this.n = n;
         this.i = i;
+        this.alpha = alpha;
         this.value = new Random().nextInt(2) == 0 ? false : true;
+        reset();
+    }
+
+    private void reset() {
         this.proposal = null;
         this.ballot = i - n;
         this.readballot = 0;
@@ -65,9 +68,9 @@ public class Process extends UntypedAbstractActor {
     }
 
     private void reset_states() {
-        this.states = new ArrayList<>();
+        this.states = new Pair[n]; // initialize array of Pair
         for (int j = 0; j < n; j++) {
-            states.add(new Pair(null, 0));
+            states[j] = new Pair(null, 0);
         }
     }
 
@@ -126,30 +129,34 @@ public class Process extends UntypedAbstractActor {
         } else if (message instanceof Abort) {
             log.info(this + " - ABORT received from " + getSender().path().name());
             // Invoke propose again
+            reset(); // ????
             propose(value);
         } else if (message instanceof Gather) {
             log.info(this + " - GATHER received from " + getSender().path().name());
             Gather gather = (Gather) message;
-            states.set(gather.i, new Pair(gather.est, gather.estballot));
+            states[gather.i] = new Pair(gather.est, gather.estballot);
             
             // Count the number os states with a non-null est field
             int count = 0;
             for (int j = 0; j < n; j++) {
-                count += states.get(j).est != null ? 1 : 0;
+                count += states[j].est != null ? 1 : 0;
             }
+
+            System.out.println("count: " + count);
+            System.out.println("states: " + states);
 
             if (count > n / 2) { // received a majority of responses
                 int k = -1;
                 int max_estballot = 0;
                 for (int j = 0; j < n; j++) {
-                    int estb = states.get(j).estballot;
+                    int estb = states[j].estballot;
                     if (estb > max_estballot) {
                         k = j;
                         max_estballot = estb;
                     }
                 }
                 if (k != -1) {
-                    this.proposal = states.get(k).est;
+                    this.proposal = states[k].est;
                 }
                 reset_states();
                 for (ActorRef actor : processes.references) {
