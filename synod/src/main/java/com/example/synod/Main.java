@@ -8,10 +8,10 @@ import com.example.synod.message.*;
 import java.util.*;
 
 public class Main {
-    public static int N = 3;
-    public static int f = 1;
+    public static int N = 100;
+    public static int f = 49;
     public static float alpha = 0.1f;
-    public static int t_le = 10000;
+    public static int t_le = 5;
 
     public static void main(String[] args) throws InterruptedException {
         // Instantiate an actor system

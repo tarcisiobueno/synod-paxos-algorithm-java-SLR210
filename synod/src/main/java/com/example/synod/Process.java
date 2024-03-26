@@ -9,15 +9,14 @@ import akka.event.LoggingAdapter;
 import com.example.synod.message.*;
 
 import java.util.Random;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Process extends UntypedAbstractActor {
 
     public class Pair {
         public Boolean est;
         public int estballot;
-        public Pair(Boolean est, int estballot){
+
+        public Pair(Boolean est, int estballot) {
             this.est = est;
             this.estballot = estballot;
         }
@@ -39,10 +38,12 @@ public class Process extends UntypedAbstractActor {
     private int readballot;
     private int imposeballot;
     private Boolean estimate;
-    private List<Pair> states;
+    private Pair[] states;
     private State state;
     private Boolean willpropose;
-    
+
+    private int count = 0;
+
     /**
      * Static method to create an actor
      */
@@ -53,11 +54,18 @@ public class Process extends UntypedAbstractActor {
     public Process(int n, int i, float alpha) {
         this.n = n;
         this.i = i;
+        this.alpha = alpha;
         this.value = new Random().nextInt(2) == 0 ? false : true;
+        reset();
+
+    }
+
+    private void reset() {
         this.proposal = null;
         this.ballot = i - n;
         this.readballot = 0;
-        this.imposeballot = 0;
+        // changed this - It was this.imposeballot = 0; before
+        this.imposeballot = i - n;
         this.estimate = null;
         reset_states();
         this.state = State.NORMAL;
@@ -65,9 +73,9 @@ public class Process extends UntypedAbstractActor {
     }
 
     private void reset_states() {
-        this.states = new ArrayList<>();
+        this.states = new Pair[n]; // initialize array of Pair
         for (int j = 0; j < n; j++) {
-            states.add(new Pair(null, 0));
+            states[j] = new Pair(null, 0);
         }
     }
 
@@ -76,17 +84,18 @@ public class Process extends UntypedAbstractActor {
             return;
         }
         log.info(this + " - propose(" + v + ")");
-        proposal = v;
-        ballot += n;
+        this.proposal = v;
+        this.ballot += n;
+
         reset_states();
-        // Send READ to all 
+        // Send READ to all
         for (ActorRef actor : processes.references) {
             Read r = new Read(ballot);
             actor.tell(r, getSelf());
         }
     }
 
-    public void onReceive(Object message) throws Throwable {       
+    public void onReceive(Object message) throws Throwable {
         if (state == State.FAULTY) {
             // Crash with probability alpha
             float r = new Random().nextFloat();
@@ -111,7 +120,6 @@ public class Process extends UntypedAbstractActor {
             log.info(this + " - LAUNCH received");
             propose(value);
         } else if (message instanceof Read) {
-            log.info(this + " - READ received from " + getSender().path().name());
             Read read = (Read) message;
             if (readballot > read.ballot || imposeballot > read.ballot) {
                 // Send ABORT to sender
@@ -119,43 +127,43 @@ public class Process extends UntypedAbstractActor {
                 getSender().tell(abort, getSelf());
             } else {
                 readballot = read.ballot;
-                // Send GATHER to sender
+                // Send GATHER to senders
                 Gather gather = new Gather(read.ballot, imposeballot, estimate, this.i);
                 getSender().tell(gather, getSelf());
             }
         } else if (message instanceof Abort) {
             log.info(this + " - ABORT received from " + getSender().path().name());
             // Invoke propose again
+            // reset(); // ????
             propose(value);
         } else if (message instanceof Gather) {
             log.info(this + " - GATHER received from " + getSender().path().name());
+            count++;
             Gather gather = (Gather) message;
-            states.set(gather.i, new Pair(gather.est, gather.estballot));
-            
-            // Count the number os states with a non-null est field
-            int count = 0;
-            for (int j = 0; j < n; j++) {
-                count += states.get(j).est != null ? 1 : 0;
-            }
+            states[gather.i] = new Pair(gather.est, gather.estballot);
 
             if (count > n / 2) { // received a majority of responses
+
                 int k = -1;
                 int max_estballot = 0;
                 for (int j = 0; j < n; j++) {
-                    int estb = states.get(j).estballot;
+                    int estb = states[j].estballot;
                     if (estb > max_estballot) {
                         k = j;
                         max_estballot = estb;
                     }
                 }
                 if (k != -1) {
-                    this.proposal = states.get(k).est;
+                    this.proposal = states[k].est;
                 }
+
                 reset_states();
                 for (ActorRef actor : processes.references) {
                     Impose imp = new Impose(this.ballot, this.proposal);
                     actor.tell(imp, getSelf());
                 }
+
+                count = 0;
             }
         } else if (message instanceof Impose) {
             log.info(this + " - IMPOSE received from " + getSender().path().name());
@@ -187,6 +195,7 @@ public class Process extends UntypedAbstractActor {
                 actor.tell(dec, getSelf());
             }
             log.info(this + " - decided: " + decide.v);
+            state = State.SILENT;
         } else if (message instanceof Crash) {
             log.info(this + " - CRASH received");
             this.state = State.FAULTY;
