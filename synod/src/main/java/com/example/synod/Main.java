@@ -9,9 +9,9 @@ import java.util.*;
 
 public class Main {
     public static int N = 100;
-    public static int f = 49;
+    public static int f = 1;
     public static float alpha = 0.1f;
-    public static int t_le = 5;
+    public static int t_le = 10000;
 
     public static void main(String[] args) throws InterruptedException {
         // Instantiate an actor system
@@ -30,6 +30,9 @@ public class Main {
         for (ActorRef actor : processes) {
             actor.tell(m, ActorRef.noSender());
         }
+
+        // Sleep for a while to allow each process to register the reference to the others
+        Thread.sleep(N*10);
 
         // Send LAUNCH to all processes
         for (ActorRef actor : processes) {
