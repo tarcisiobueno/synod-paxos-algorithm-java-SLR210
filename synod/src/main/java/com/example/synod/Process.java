@@ -43,6 +43,7 @@ public class Process extends UntypedAbstractActor {
     private Boolean willpropose;
 
     private int count = 0;
+    private int ackCounter = 0;
 
     /**
      * Static method to create an actor
@@ -181,11 +182,16 @@ public class Process extends UntypedAbstractActor {
             }
         } else if (message instanceof Ack) {
             log.info(this + " - ACK received from " + getSender().path().name());
-            // Send DECIDE to all
-            for (ActorRef actor : processes.references) {
-                Decide dec = new Decide(proposal);
-                actor.tell(dec, getSelf());
+            ackCounter++;
+            if (ackCounter > n / 2) {
+                // Send DECIDE to all
+                for (ActorRef actor : processes.references) {
+                    Decide dec = new Decide(proposal);
+                    actor.tell(dec, getSelf());
+                }
+            ackCounter = 0;
             }
+
         } else if (message instanceof Decide) {
             log.info(this + " - DECIDE received from " + getSender().path().name());
             Decide decide = (Decide) message;
