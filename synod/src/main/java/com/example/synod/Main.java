@@ -8,12 +8,21 @@ import com.example.synod.message.*;
 import java.util.*;
 
 public class Main {
-    public static int N = 3;
+    public static int N = 100;
     public static int f = 1;
-    public static float alpha = 0.1f;
-    public static int t_le = 10;
+    public static float alpha = 0;
+    public static int t_le = 500;
 
     public static void main(String[] args) throws InterruptedException {
+
+        // Parse arguments
+        if (args.length != 0) {
+            N = args[0] != null ? Integer.parseInt(args[0]) : N;
+            f = args[1] != null ? Integer.parseInt(args[1]) : f;
+            alpha = args[2] != null ? Float.parseFloat(args[2]) : alpha;
+            t_le = args[3] != null ? Integer.parseInt(args[2]) : t_le;
+        }
+
         // Instantiate an actor system
         final ActorSystem system = ActorSystem.create("system");
         system.log().info("System started with N=" + N );
@@ -32,7 +41,7 @@ public class Main {
         }
 
         // Sleep for a while to allow each process to register the reference to the others
-        Thread.sleep(N*10);
+        // Thread.sleep(N*10);
 
         // Send LAUNCH to all processes
         for (ActorRef actor : processes) {
@@ -54,5 +63,18 @@ public class Main {
                 processes.get(i).tell(new Hold(), ActorRef.noSender());
             }
         }
+
+        // Wait before ending system
+        try {
+            waitBeforeTerminate();
+        } catch (InterruptedException exp) {
+            exp.printStackTrace();
+        } finally {
+            system.terminate();
+        }
+    }
+
+    public static void waitBeforeTerminate() throws InterruptedException {
+        Thread.sleep(5000);
     }
 }

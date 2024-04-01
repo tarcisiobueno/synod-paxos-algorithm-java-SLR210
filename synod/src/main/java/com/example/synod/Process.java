@@ -42,9 +42,9 @@ public class Process extends UntypedAbstractActor {
     private State state;
     private Boolean willpropose;
 
-    private int count = 0;
-    private int ackCounter = 0;
-    private Boolean hasDecided = null;
+    private int gatherCounter;
+    private int ackCounter;
+    private Boolean hasDecided;
     /**
      * Static method to create an actor
      */
@@ -57,6 +57,9 @@ public class Process extends UntypedAbstractActor {
         this.i = i;
         this.alpha = alpha;
         this.value = new Random().nextInt(2) == 0 ? false : true;
+        this.gatherCounter = 0;
+        this.ackCounter = 0;
+        this.hasDecided = false;
         reset();
 
     }
@@ -103,8 +106,6 @@ public class Process extends UntypedAbstractActor {
             if (r < this.alpha) {
                 log.info(this + " - CRASHED");
                 this.state = State.SILENT;
-                // getContext().stop(getSelf());
-                // return;
             }
         }
 
@@ -137,15 +138,15 @@ public class Process extends UntypedAbstractActor {
         } else if (message instanceof Abort) {
             log.info(this + " - ABORT received from " + getSender().path().name() + " ballot: " + ((Abort) message).ballot);
             // Invoke propose again
-            // reset(); // ????
+            ackCounter = 0;
             propose(value);
         } else if (message instanceof Gather) {
             log.info(this + " - GATHER received from " + getSender().path().name());
-            count++;
+            gatherCounter++;
             Gather gather = (Gather) message;
             states[gather.i] = new Pair(gather.est, gather.estballot);
 
-            if (count > n / 2) { // received a majority of responses
+            if (gatherCounter > n / 2) { // received a majority of responses
 
                 int k = -1;
                 int max_estballot = 0;
@@ -166,7 +167,7 @@ public class Process extends UntypedAbstractActor {
                     actor.tell(imp, getSelf());
                 }
 
-                count = 0;
+                gatherCounter = 0;
             }
         } else if (message instanceof Impose) {
             Impose impose = (Impose) message;
@@ -191,27 +192,22 @@ public class Process extends UntypedAbstractActor {
                     Decide dec = new Decide(proposal);
                     actor.tell(dec, getSelf());
                 }
-            ackCounter = 0;
+                ackCounter = 0;
             }
-
         } else if (message instanceof Decide) {
-            if (hasDecided == null) {
+            if (!hasDecided) {
                 log.info(this + " - DECIDE received from " + getSender().path().name());
+                hasDecided = true;
                 Decide decide = (Decide) message;
                 // Send DECIDE to all
-                hasDecided = decide.v;
                 for (ActorRef actor : processes.references) {
                     Decide dec = new Decide(decide.v);
                     actor.tell(dec, getSelf());
                 }
                 willpropose = false;
-                // state = State.SILENT;
+                state = State.SILENT;
                 log.info(this + " - decided: " + decide.v);
             }
-    
-    
-            
-            
         } else if (message instanceof Crash) {
             log.info(this + " - CRASH received");
             this.state = State.FAULTY;
