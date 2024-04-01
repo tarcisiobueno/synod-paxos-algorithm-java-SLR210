@@ -1,3 +1,3 @@
-N: 3 F: 1 alpha: 0 tle: 500 Average Time (ms): 49.20
-N: 10 F: 4 alpha: 0 tle: 500 Average Time (ms): 212.40
-N: 100 F: 49 alpha: 0 tle: 500 Average Time (ms): -44433662.00
+N: 3 F: 1 alpha: 0 tle: 500 Average Time (ms): 39.80
+N: 10 F: 4 alpha: 0 tle: 500 Average Time (ms): -49440733.00
+N: 100 F: 49 alpha: 0 tle: 500 Average Time (ms): -49456463.60

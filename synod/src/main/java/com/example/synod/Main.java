@@ -10,7 +10,7 @@ import java.util.*;
 public class Main {
     public static int N = 100;
     public static int f = 1;
-    public static float alpha = 0;
+    public static float alpha = 0.1f;
     public static int t_le = 500;
 
     public static void main(String[] args) throws InterruptedException {
@@ -25,7 +25,7 @@ public class Main {
 
         // Instantiate an actor system
         final ActorSystem system = ActorSystem.create("system");
-        system.log().info("System started with N=" + N );
+        system.log().info("System started with N=" + N);
 
         ArrayList<ActorRef> processes = new ArrayList<>();
 
@@ -41,7 +41,7 @@ public class Main {
         }
 
         // Sleep for a while to allow each process to register the reference to the others
-        // Thread.sleep(N*10);
+        Thread.sleep(N*10);
 
         // Send LAUNCH to all processes
         for (ActorRef actor : processes) {
@@ -65,16 +65,16 @@ public class Main {
         }
 
         // Wait before ending system
-        try {
-            waitBeforeTerminate();
-        } catch (InterruptedException exp) {
-            exp.printStackTrace();
-        } finally {
-            system.terminate();
-        }
+        // try {
+        //     waitBeforeTerminate();
+        // } catch (InterruptedException exp) {
+        //     exp.printStackTrace();
+        // } finally {
+        //     system.terminate();
+        // }
     }
 
     public static void waitBeforeTerminate() throws InterruptedException {
-        Thread.sleep(5000);
+        Thread.sleep(20000);
     }
 }

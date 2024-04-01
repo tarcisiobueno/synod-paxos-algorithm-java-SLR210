@@ -42,9 +42,9 @@ public class Process extends UntypedAbstractActor {
     private State state;
     private Boolean willpropose;
 
-    private int gatherCounter;
-    private int ackCounter;
-    private Boolean hasDecided;
+    private int count = 0;
+    private int ackCounter = 0;
+
     /**
      * Static method to create an actor
      */
@@ -57,9 +57,6 @@ public class Process extends UntypedAbstractActor {
         this.i = i;
         this.alpha = alpha;
         this.value = new Random().nextInt(2) == 0 ? false : true;
-        this.gatherCounter = 0;
-        this.ackCounter = 0;
-        this.hasDecided = false;
         reset();
 
     }
@@ -87,10 +84,12 @@ public class Process extends UntypedAbstractActor {
         if (!willpropose) {
             return;
         }
-        log.info(this + " - propose(" + v + ")");
+        // log.info(this + " - propose(" + v + ")");
         this.proposal = v;
         this.ballot += n;
 
+        count = 0;
+        ackCounter = 0;
         reset_states();
         // Send READ to all
         for (ActorRef actor : processes.references) {
@@ -106,6 +105,8 @@ public class Process extends UntypedAbstractActor {
             if (r < this.alpha) {
                 log.info(this + " - CRASHED");
                 this.state = State.SILENT;
+                // getContext().stop(getSelf());
+                // return;
             }
         }
 
@@ -115,16 +116,14 @@ public class Process extends UntypedAbstractActor {
         }
 
         if (message instanceof Membership) {
-            log.info(this + " - MEMBERSHIP received");
+            // log.info(this + " - MEMBERSHIP received");
             Membership m = (Membership) message;
             processes = m;
         } else if (message instanceof Launch) {
-            log.info(this + " - LAUNCH received");
+            // log.info(this + " - LAUNCH received");
             propose(value);
         } else if (message instanceof Read) {
-        
             Read read = (Read) message;
-            log.info(this + " - READ received from " + getSender().path().name() + " ballot: " + read.ballot);
             if (readballot > read.ballot || imposeballot > read.ballot) {
                 // Send ABORT to sender
                 Abort abort = new Abort(read.ballot);
@@ -136,17 +135,17 @@ public class Process extends UntypedAbstractActor {
                 getSender().tell(gather, getSelf());
             }
         } else if (message instanceof Abort) {
-            log.info(this + " - ABORT received from " + getSender().path().name() + " ballot: " + ((Abort) message).ballot);
+            // log.info(this + " - ABORT received from " + getSender().path().name());
             // Invoke propose again
-            ackCounter = 0;
+            // reset(); // ????
             propose(value);
         } else if (message instanceof Gather) {
-            log.info(this + " - GATHER received from " + getSender().path().name());
-            gatherCounter++;
+            // log.info(this + " - GATHER received from " + getSender().path().name());
+            count++;
             Gather gather = (Gather) message;
             states[gather.i] = new Pair(gather.est, gather.estballot);
 
-            if (gatherCounter > n / 2) { // received a majority of responses
+            if (count > n / 2) { // received a majority of responses
 
                 int k = -1;
                 int max_estballot = 0;
@@ -167,11 +166,11 @@ public class Process extends UntypedAbstractActor {
                     actor.tell(imp, getSelf());
                 }
 
-                gatherCounter = 0;
+                count = 0;
             }
         } else if (message instanceof Impose) {
+            // log.info(this + " - IMPOSE received from " + getSender().path().name());
             Impose impose = (Impose) message;
-            log.info(this + " - IMPOSE received from: " + getSender().path().name() + " v: " + impose.v + " with ballot: " + impose.ballot);
             if (readballot > impose.ballot || imposeballot > impose.ballot) {
                 // Send ABORT to sender
                 Abort a = new Abort(impose.ballot);
@@ -184,7 +183,7 @@ public class Process extends UntypedAbstractActor {
                 getSender().tell(ack, getSelf());
             }
         } else if (message instanceof Ack) {
-            log.info(this + " - ACK received from " + getSender().path().name() + " with ballot: " + ((Ack) message).ballot);
+            // log.info(this + " - ACK received from " + getSender().path().name());
             ackCounter++;
             if (ackCounter > n / 2) {
                 // Send DECIDE to all
@@ -194,22 +193,23 @@ public class Process extends UntypedAbstractActor {
                 }
                 ackCounter = 0;
             }
+
         } else if (message instanceof Decide) {
-            if (!hasDecided) {
-                log.info(this + " - DECIDE received from " + getSender().path().name());
-                hasDecided = true;
-                Decide decide = (Decide) message;
-                // Send DECIDE to all
-                for (ActorRef actor : processes.references) {
-                    Decide dec = new Decide(decide.v);
-                    actor.tell(dec, getSelf());
-                }
-                willpropose = false;
-                state = State.SILENT;
-                log.info(this + " - decided: " + decide.v);
+            // log.info(this + " - DECIDE received from " + getSender().path().name());
+            Decide decide = (Decide) message;
+            // Send DECIDE to all
+            for (ActorRef actor : processes.references) {
+                Decide dec = new Decide(decide.v);
+                actor.tell(dec, getSelf());
             }
+            log.info(this + " - decided: " + decide.v);
+            state = State.SILENT;
+
+            Thread.sleep(100);
+
+            System.exit(0);
         } else if (message instanceof Crash) {
-            log.info(this + " - CRASH received");
+            // log.info(this + " - CRASH received");
             this.state = State.FAULTY;
         } else if (message instanceof Hold) {
             log.info(this + " - HOLD received");
