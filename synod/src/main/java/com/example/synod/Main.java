@@ -9,9 +9,9 @@ import java.util.*;
 
 public class Main {
     public static int N = 100;
-    public static int f = 1;
-    public static float alpha = 0.1f;
-    public static int t_le = 500;
+    public static int f = 49;
+    public static float alpha = 0;
+    public static int t_le = 2;
 
     public static void main(String[] args) throws InterruptedException {
 
@@ -41,7 +41,7 @@ public class Main {
         }
 
         // Sleep for a while to allow each process to register the reference to the others
-        Thread.sleep(N*10);
+        //Thread.sleep(100);
 
         // Send LAUNCH to all processes
         for (ActorRef actor : processes) {
@@ -64,17 +64,17 @@ public class Main {
             }
         }
 
-        // Wait before ending system
-        // try {
-        //     waitBeforeTerminate();
-        // } catch (InterruptedException exp) {
-        //     exp.printStackTrace();
-        // } finally {
-        //     system.terminate();
-        // }
+        //Wait before ending system
+        try {
+             waitBeforeTerminate();
+         } catch (InterruptedException exp) {
+             exp.printStackTrace();
+         } finally {
+             system.terminate();
+         }
     }
 
     public static void waitBeforeTerminate() throws InterruptedException {
-        Thread.sleep(20000);
+        Thread.sleep(5000);
     }
 }

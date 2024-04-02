@@ -116,11 +116,11 @@ public class Process extends UntypedAbstractActor {
         }
 
         if (message instanceof Membership) {
-            // log.info(this + " - MEMBERSHIP received");
+            log.info(this + " - MEMBERSHIP received");
             Membership m = (Membership) message;
             processes = m;
         } else if (message instanceof Launch) {
-            // log.info(this + " - LAUNCH received");
+            log.info(this + " - LAUNCH received");
             propose(value);
         } else if (message instanceof Read) {
             Read read = (Read) message;
@@ -135,14 +135,27 @@ public class Process extends UntypedAbstractActor {
                 getSender().tell(gather, getSelf());
             }
         } else if (message instanceof Abort) {
-            // log.info(this + " - ABORT received from " + getSender().path().name());
+            log.info(this + " - ABORT received from " + getSender().path().name());
             // Invoke propose again
             // reset(); // ????
+            // check abort ballot
+            Abort abort = (Abort) message;
+            if (abort.ballot != this.ballot) {
+                return;
+            }
+            
             propose(value);
         } else if (message instanceof Gather) {
-            // log.info(this + " - GATHER received from " + getSender().path().name());
-            count++;
             Gather gather = (Gather) message;
+            // ballot check
+
+            if (gather.ballot != this.ballot) {
+                return;
+            }
+
+            log.info(this + " - GATHER received from " + getSender().path().name());
+            count++;
+            
             states[gather.i] = new Pair(gather.est, gather.estballot);
 
             if (count > n / 2) { // received a majority of responses
@@ -169,7 +182,7 @@ public class Process extends UntypedAbstractActor {
                 count = 0;
             }
         } else if (message instanceof Impose) {
-            // log.info(this + " - IMPOSE received from " + getSender().path().name());
+             log.info(this + " - IMPOSE received from " + getSender().path().name());
             Impose impose = (Impose) message;
             if (readballot > impose.ballot || imposeballot > impose.ballot) {
                 // Send ABORT to sender
@@ -183,7 +196,14 @@ public class Process extends UntypedAbstractActor {
                 getSender().tell(ack, getSelf());
             }
         } else if (message instanceof Ack) {
-            // log.info(this + " - ACK received from " + getSender().path().name());
+            log.info(this + " - ACK received from " + getSender().path().name());
+
+            // ack check
+            Ack ack = (Ack) message;
+            if (ack.ballot != this.ballot) {
+                return;
+            }
+
             ackCounter++;
             if (ackCounter > n / 2) {
                 // Send DECIDE to all
@@ -195,7 +215,7 @@ public class Process extends UntypedAbstractActor {
             }
 
         } else if (message instanceof Decide) {
-            // log.info(this + " - DECIDE received from " + getSender().path().name());
+            log.info(this + " - DECIDE received from " + getSender().path().name());
             Decide decide = (Decide) message;
             // Send DECIDE to all
             for (ActorRef actor : processes.references) {
@@ -205,11 +225,10 @@ public class Process extends UntypedAbstractActor {
             log.info(this + " - decided: " + decide.v);
             state = State.SILENT;
 
-            Thread.sleep(100);
-
-            System.exit(0);
+            // Thread.sleep(100);
+            // System.exit(0);
         } else if (message instanceof Crash) {
-            // log.info(this + " - CRASH received");
+            log.info(this + " - CRASH received");
             this.state = State.FAULTY;
         } else if (message instanceof Hold) {
             log.info(this + " - HOLD received");
