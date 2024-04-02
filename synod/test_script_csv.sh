@@ -7,7 +7,10 @@ ALPHA_OPTIONS="0 0.1 1"
 TLE_OPTIONS="500 1000 1500 2000"
 
 # Clear the output file
-> output.txt
+> data.csv
+
+# Write the header of the CSV file
+echo "n;f;alfa;tle;avg_latency" | tee -a data.csv
 
 # Perform the experiment for each combination of parameters
 for index in ${!N_OPTIONS[@]}; do
@@ -24,8 +27,8 @@ for index in ${!N_OPTIONS[@]}; do
       done
       # Calculate the average latency
       avg_latency=$(echo "scale=2; $total_latency / 5" | bc)
-      log="N: $n F: $f alpha: $alpha tle: $tle Average Time (ms): $avg_latency"
-      echo "$log" | tee -a output.txt
+      log="$n;$f;$alpha;$tle;$avg_latency"
+      echo "$log" | tee -a data.csv
     done
   done
 done

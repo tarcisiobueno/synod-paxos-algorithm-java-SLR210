@@ -10,17 +10,16 @@ import java.util.*;
 public class Main {
     public static int N = 100;
     public static int f = 49;
-    public static float alpha = 0;
-    public static int t_le = 2;
+    public static double alpha = 1;
+    public static int t_le = 2000;
 
     public static void main(String[] args) throws InterruptedException {
-
         // Parse arguments
         if (args.length != 0) {
             N = args[0] != null ? Integer.parseInt(args[0]) : N;
             f = args[1] != null ? Integer.parseInt(args[1]) : f;
-            alpha = args[2] != null ? Float.parseFloat(args[2]) : alpha;
-            t_le = args[3] != null ? Integer.parseInt(args[2]) : t_le;
+            alpha = args[2] != null ? Double.parseDouble(args[2]) : alpha;
+            t_le = args[3] != null ? Integer.parseInt(args[3]) : t_le;
         }
 
         // Instantiate an actor system
@@ -57,6 +56,8 @@ public class Main {
         // Sleep for a while
         Thread.sleep(t_le);
 
+        System.out.println("Leader is " + f);
+
         // Send HOLD to all correct processes but the leader
         for (int i = 0; i < N; i++) {
             if (i != f) { // the process in position f is the leader
@@ -75,6 +76,6 @@ public class Main {
     }
 
     public static void waitBeforeTerminate() throws InterruptedException {
-        Thread.sleep(5000);
+        Thread.sleep(150);
     }
 }
