@@ -8,9 +8,9 @@ import com.example.synod.message.*;
 import java.util.*;
 
 public class Main {
-    public static int N = 100;
-    public static int f = 49;
-    public static double alpha = 1;
+    public static int N = 3;
+    public static int f = 1;
+    public static double alpha = 0;
     public static int t_le = 2000;
 
     public static void main(String[] args) throws InterruptedException {
@@ -55,8 +55,6 @@ public class Main {
 
         // Sleep for a while
         Thread.sleep(t_le);
-
-        System.out.println("Leader is " + f);
 
         // Send HOLD to all correct processes but the leader
         for (int i = 0; i < N; i++) {

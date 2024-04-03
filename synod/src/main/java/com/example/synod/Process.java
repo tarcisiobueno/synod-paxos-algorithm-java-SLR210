@@ -101,7 +101,7 @@ public class Process extends UntypedAbstractActor {
             // Crash with probability alpha
             double r = new Random().nextDouble();
             if (r < this.alpha) {
-                log.info(this + " - CRASHED");
+                // log.info(this + " - CRASHED");
                 this.state = State.SILENT;
             }
         }
@@ -210,7 +210,7 @@ public class Process extends UntypedAbstractActor {
             // log.info(this + " - CRASH received");
             this.state = State.FAULTY;
         } else if (message instanceof Hold) {
-            log.info(this + " - HOLD received");
+            // log.info(this + " - HOLD received");
             this.willpropose = false;
         }
     }
