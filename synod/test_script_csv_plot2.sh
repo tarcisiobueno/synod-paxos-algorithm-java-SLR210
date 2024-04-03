@@ -1,15 +1,15 @@
 #!/bin/bash
 
 # Defining the valid options for each parameter
-N_OPTIONS="50 100 150 200"
-ALPHA_OPTIONS="0 0.1 0.5 1.0"
+N_OPTIONS="3 10 25"
+ALPHA_OPTIONS="0 0.1 1.0"
 TLE_OPTIONS="5 250 500 750 1000 1250 1500 1750 2000 2500 3000 3500 4000"
 
 # Clear the output file
-> data22.csv
+> data23.csv
 
 # Write the header of the CSV file
-echo "n;f;alfa;tle;avg_latency" | tee -a data22.csv
+echo "n;f;alfa;tle;avg_latency" | tee -a data23.csv
 
 # Perform the experiment for each combination of parameters
 for n in $N_OPTIONS; do
@@ -26,7 +26,7 @@ for n in $N_OPTIONS; do
       # Calculate the average latency
       avg_latency=$(echo "scale=2; $total_latency / 5" | bc)
       log="$n;$f;$alpha;$tle;$avg_latency"
-      echo "$log" | tee -a data22.csv
+      echo "$log" | tee -a data23.csv
     done
   done
 done
