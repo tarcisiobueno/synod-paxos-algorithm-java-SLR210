@@ -1,2 +1,5 @@
 .vscode
 synod/target/
+images/
+synod.tgz
+docs/
