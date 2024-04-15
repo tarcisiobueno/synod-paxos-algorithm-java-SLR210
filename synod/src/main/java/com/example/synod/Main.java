@@ -20,13 +20,15 @@ public class Main {
             N = args[0] != null ? Integer.parseInt(args[0]) : N;
             f = args[1] != null ? Integer.parseInt(args[1]) : f;
             alpha = args[2] != null ? Float.parseFloat(args[2]) : alpha;
-            t_le = args[3] != null ? Integer.parseInt(args[2]) : t_le;
+            t_le = args[3] != null ? Integer.parseInt(args[3]) : t_le;
         }
+
+        
 
         // Instantiate an actor system
         final ActorSystem system = ActorSystem.create("system");
-        system.log().info("System started with N=" + N);
-
+        //system.log().info("System started with N=" + N);
+        
         ArrayList<ActorRef> processes = new ArrayList<>();
 
         for (int i = 0; i < N; i++) {
@@ -34,8 +36,10 @@ public class Main {
             processes.add(a);
         }
 
+        ActorRef observer = system.actorOf(Observer.createActor(N, alpha, t_le), "observer");
+
         //give each process a view of all the other processes
-        Membership m = new Membership(processes);
+        Membership m = new Membership(processes, observer);
         for (ActorRef actor : processes) {
             actor.tell(m, ActorRef.noSender());
         }
@@ -65,13 +69,13 @@ public class Main {
         }
 
         //Wait before ending system
-        try {
+        /*try {
              waitBeforeTerminate();
          } catch (InterruptedException exp) {
              exp.printStackTrace();
          } finally {
              system.terminate();
-         }
+         }*/
     }
 
     public static void waitBeforeTerminate() throws InterruptedException {

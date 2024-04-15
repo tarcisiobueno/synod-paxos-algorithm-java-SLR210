@@ -103,7 +103,7 @@ public class Process extends UntypedAbstractActor {
             // Crash with probability alpha
             float r = new Random().nextFloat();
             if (r < this.alpha) {
-                log.info(this + " - CRASHED");
+                //log.info(this + " - CRASHED");
                 this.state = State.SILENT;
                 // getContext().stop(getSelf());
                 // return;
@@ -116,11 +116,11 @@ public class Process extends UntypedAbstractActor {
         }
 
         if (message instanceof Membership) {
-            log.info(this + " - MEMBERSHIP received");
+            //log.info(this + " - MEMBERSHIP received");
             Membership m = (Membership) message;
             processes = m;
         } else if (message instanceof Launch) {
-            log.info(this + " - LAUNCH received");
+            //log.info(this + " - LAUNCH received");
             propose(value);
         } else if (message instanceof Read) {
             Read read = (Read) message;
@@ -135,7 +135,7 @@ public class Process extends UntypedAbstractActor {
                 getSender().tell(gather, getSelf());
             }
         } else if (message instanceof Abort) {
-            log.info(this + " - ABORT received from " + getSender().path().name());
+            //log.info(this + " - ABORT received from " + getSender().path().name());
             // Invoke propose again
             // reset(); // ????
             // check abort ballot
@@ -153,7 +153,7 @@ public class Process extends UntypedAbstractActor {
                 return;
             }
 
-            log.info(this + " - GATHER received from " + getSender().path().name());
+            //log.info(this + " - GATHER received from " + getSender().path().name());
             count++;
             
             states[gather.i] = new Pair(gather.est, gather.estballot);
@@ -182,7 +182,7 @@ public class Process extends UntypedAbstractActor {
                 count = 0;
             }
         } else if (message instanceof Impose) {
-             log.info(this + " - IMPOSE received from " + getSender().path().name());
+            //log.info(this + " - IMPOSE received from " + getSender().path().name());
             Impose impose = (Impose) message;
             if (readballot > impose.ballot || imposeballot > impose.ballot) {
                 // Send ABORT to sender
@@ -196,7 +196,7 @@ public class Process extends UntypedAbstractActor {
                 getSender().tell(ack, getSelf());
             }
         } else if (message instanceof Ack) {
-            log.info(this + " - ACK received from " + getSender().path().name());
+            //log.info(this + " - ACK received from " + getSender().path().name());
 
             // ack check
             Ack ack = (Ack) message;
@@ -207,6 +207,7 @@ public class Process extends UntypedAbstractActor {
             ackCounter++;
             if (ackCounter > n / 2) {
                 // Send DECIDE to all
+                processes.observer.tell(new Decide(proposal), getSelf());
                 for (ActorRef actor : processes.references) {
                     Decide dec = new Decide(proposal);
                     actor.tell(dec, getSelf());
@@ -215,23 +216,24 @@ public class Process extends UntypedAbstractActor {
             }
 
         } else if (message instanceof Decide) {
-            log.info(this + " - DECIDE received from " + getSender().path().name());
+            //log.info(this + " - DECIDE received from " + getSender().path().name());
             Decide decide = (Decide) message;
             // Send DECIDE to all
             for (ActorRef actor : processes.references) {
                 Decide dec = new Decide(decide.v);
                 actor.tell(dec, getSelf());
             }
-            log.info(this + " - decided: " + decide.v);
+            //log.info(this + " - decided: " + decide.v);
+            //log.info(this + " - decided: " + decide.v + " n = " + n);
             state = State.SILENT;
 
             // Thread.sleep(100);
             // System.exit(0);
         } else if (message instanceof Crash) {
-            log.info(this + " - CRASH received");
+            //log.info(this + " - CRASH received");
             this.state = State.FAULTY;
         } else if (message instanceof Hold) {
-            log.info(this + " - HOLD received");
+            //log.info(this + " - HOLD received");
             this.willpropose = false;
         }
     }
