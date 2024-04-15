@@ -1,5 +1,10 @@
+/**
+ * This file contains the implementation of the Process class.
+ * The Process class extends the UntypedAbstractActor class from the Akka library and implements the behavior of a process in the obstruction-free synod algorithm.
+ * The process can be in one of three states: NORMAL, FAULTY, or SILENT.
+ * It receives messages from other processes and reacts accordingly based on its current state and the type of message received.
+ */
 package com.example.synod;
-
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.UntypedAbstractActor;
@@ -26,11 +31,11 @@ public class Process extends UntypedAbstractActor {
         NORMAL, FAULTY, SILENT
     }
 
-    private final LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);// Logger attached to actor
+    private final LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this); // Logger attached to actor
 
     private int n; // number of processes
     private int i; // id of current process
-    private float alpha; // probability of crashing
+    private double alpha; // probability of crashing
     private Boolean value; // value to propose
     private Membership processes; // other processes' references
     private Boolean proposal;
@@ -45,14 +50,11 @@ public class Process extends UntypedAbstractActor {
     private int count = 0;
     private int ackCounter = 0;
 
-    /**
-     * Static method to create an actor
-     */
-    public static Props createActor(int n, int i, float alpha) {
+    public static Props createActor(int n, int i, double alpha) {
         return Props.create(Process.class, () -> new Process(n, i, alpha));
     }
 
-    public Process(int n, int i, float alpha) {
+    public Process(int n, int i, double alpha) {
         this.n = n;
         this.i = i;
         this.alpha = alpha;
@@ -65,7 +67,6 @@ public class Process extends UntypedAbstractActor {
         this.proposal = null;
         this.ballot = i - n;
         this.readballot = 0;
-        // changed this - It was this.imposeballot = 0; before
         this.imposeballot = i - n;
         this.estimate = null;
         reset_states();
@@ -74,7 +75,7 @@ public class Process extends UntypedAbstractActor {
     }
 
     private void reset_states() {
-        this.states = new Pair[n]; // initialize array of Pair
+        this.states = new Pair[n]; 
         for (int j = 0; j < n; j++) {
             states[j] = new Pair(null, 0);
         }
@@ -87,7 +88,6 @@ public class Process extends UntypedAbstractActor {
         // log.info(this + " - propose(" + v + ")");
         this.proposal = v;
         this.ballot += n;
-
         count = 0;
         ackCounter = 0;
         reset_states();
@@ -101,26 +101,22 @@ public class Process extends UntypedAbstractActor {
     public void onReceive(Object message) throws Throwable {
         if (state == State.FAULTY) {
             // Crash with probability alpha
-            float r = new Random().nextFloat();
+            double r = new Random().nextDouble();
             if (r < this.alpha) {
-                //log.info(this + " - CRASHED");
+                // log.info(this + " - CRASHED");
                 this.state = State.SILENT;
-                // getContext().stop(getSelf());
-                // return;
             }
         }
-
         // If the process is silent, stop reacting to messages
         if (state == State.SILENT) {
             return;
         }
-
         if (message instanceof Membership) {
-            //log.info(this + " - MEMBERSHIP received");
+            // log.info(this + " - MEMBERSHIP received");
             Membership m = (Membership) message;
             processes = m;
         } else if (message instanceof Launch) {
-            //log.info(this + " - LAUNCH received");
+            // log.info(this + " - LAUNCH received");
             propose(value);
         } else if (message instanceof Read) {
             Read read = (Read) message;
@@ -135,31 +131,26 @@ public class Process extends UntypedAbstractActor {
                 getSender().tell(gather, getSelf());
             }
         } else if (message instanceof Abort) {
-            //log.info(this + " - ABORT received from " + getSender().path().name());
-            // Invoke propose again
-            // reset(); // ????
-            // check abort ballot
+            // log.info(this + " - ABORT received from " + getSender().path().name());
+            // check abort message
             Abort abort = (Abort) message;
             if (abort.ballot != this.ballot) {
                 return;
             }
-            
+            // log.info(this + " - ABORT received from " + getSender().path().name());
             propose(value);
         } else if (message instanceof Gather) {
-            Gather gather = (Gather) message;
-            // ballot check
 
+            // check gather message 
+            Gather gather = (Gather) message;
             if (gather.ballot != this.ballot) {
                 return;
             }
 
-            //log.info(this + " - GATHER received from " + getSender().path().name());
+            // log.info(this + " - GATHER received from " + getSender().path().name());
             count++;
-            
             states[gather.i] = new Pair(gather.est, gather.estballot);
-
             if (count > n / 2) { // received a majority of responses
-
                 int k = -1;
                 int max_estballot = 0;
                 for (int j = 0; j < n; j++) {
@@ -172,41 +163,39 @@ public class Process extends UntypedAbstractActor {
                 if (k != -1) {
                     this.proposal = states[k].est;
                 }
-
                 reset_states();
                 for (ActorRef actor : processes.references) {
                     Impose imp = new Impose(this.ballot, this.proposal);
                     actor.tell(imp, getSelf());
                 }
-
                 count = 0;
             }
         } else if (message instanceof Impose) {
-            //log.info(this + " - IMPOSE received from " + getSender().path().name());
+            // log.info(this + " - IMPOSE received from " + getSender().path().name());
             Impose impose = (Impose) message;
             if (readballot > impose.ballot || imposeballot > impose.ballot) {
-                // Send ABORT to sender
+                // send ABORT to sender
                 Abort a = new Abort(impose.ballot);
                 getSender().tell(a, getSelf());
             } else {
                 this.estimate = impose.v;
                 this.imposeballot = impose.ballot;
-                // Send ACK to sender
+                // send ACK to sender
                 Ack ack = new Ack(impose.ballot);
                 getSender().tell(ack, getSelf());
             }
         } else if (message instanceof Ack) {
-            //log.info(this + " - ACK received from " + getSender().path().name());
+            // log.info(this + " - ACK received from " + getSender().path().name());
 
-            // ack check
+            // check ack message
             Ack ack = (Ack) message;
             if (ack.ballot != this.ballot) {
                 return;
             }
-
+            // log.info(this + " - ACK received from " + getSender().path().name());
             ackCounter++;
             if (ackCounter > n / 2) {
-                // Send DECIDE to all
+                // send DECIDE to all
                 processes.observer.tell(new Decide(proposal), getSelf());
                 for (ActorRef actor : processes.references) {
                     Decide dec = new Decide(proposal);
@@ -214,26 +203,21 @@ public class Process extends UntypedAbstractActor {
                 }
                 ackCounter = 0;
             }
-
         } else if (message instanceof Decide) {
-            //log.info(this + " - DECIDE received from " + getSender().path().name());
+            // log.info(this + " - DECIDE received from " + getSender().path().name());
             Decide decide = (Decide) message;
-            // Send DECIDE to all
+            // send DECIDE to all
             for (ActorRef actor : processes.references) {
                 Decide dec = new Decide(decide.v);
                 actor.tell(dec, getSelf());
             }
-            //log.info(this + " - decided: " + decide.v);
-            //log.info(this + " - decided: " + decide.v + " n = " + n);
+            // log.info(this + " - decided: " + decide.v);
             state = State.SILENT;
-
-            // Thread.sleep(100);
-            // System.exit(0);
         } else if (message instanceof Crash) {
-            //log.info(this + " - CRASH received");
+            // log.info(this + " - CRASH received");
             this.state = State.FAULTY;
         } else if (message instanceof Hold) {
-            //log.info(this + " - HOLD received");
+            // log.info(this + " - HOLD received");
             this.willpropose = false;
         }
     }

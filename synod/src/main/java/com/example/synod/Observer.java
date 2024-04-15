@@ -1,5 +1,9 @@
+/**
+ * This file contains the implementation of the Observer class.
+ * It keeps track of the time it receives the first "Decide" message and calculates the latency.
+ * It also writes the latency data to a file.
+ */
 package com.example.synod;
-
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.UntypedAbstractActor;
@@ -19,26 +23,22 @@ public class Observer extends UntypedAbstractActor {
 
     private final LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);// Logger attached to actor
 
-    private int n; // number of processes
-    private float alpha; // probability of crashing
-    private int t_le; // number of rounds to wait before deciding
+    private int n;
+    private double alpha;
+    private int t_le;
 
     Boolean received = false;
 
     long timeStart;
 
-    public Observer(int n, float alpha, int t_le) {
+    public Observer(int n, double alpha, int t_le) {
         timeStart = System.nanoTime();
         this.n = n;
         this.alpha = alpha;
         this.t_le = t_le;
     }
 
-    /**
-     * Static method to create an actor
-     */
-
-    public static Props createActor(int n, float alpha, int t_le) {
+    public static Props createActor(int n, double alpha, int t_le) {
         return Props.create(Observer.class, () -> new Observer(n, alpha, t_le));
     }
 
@@ -52,9 +52,8 @@ public class Observer extends UntypedAbstractActor {
                 context().system().terminate();
 
                 // Write latency to file
-                // Write latency to file
                 try {
-                    File file = new File("latency.csv");
+                    File file = new File("../dataAnalysis/data/latency_data_test.csv");
                     PrintWriter out = new PrintWriter(new FileWriter(file, true));
                     if (file.length() == 0) {
                         out.println("n;alpha;t_le;latency");

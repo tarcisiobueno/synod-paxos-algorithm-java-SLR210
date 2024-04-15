@@ -1,3 +1,11 @@
+
+/**
+ * Main class for the Synod algorithm.
+ * The main method creates an actor system and a set of processes that run the Synod algorithm.
+ * The processes are initialized with the number of processes, the probability of crashing, and the leader election timeout.
+ * The processes are then launched and a random subset of them is faulty.
+ * After a timeout, all processes but the leader send a HOLD message to the leader.
+ */
 package com.example.synod;
 
 import akka.actor.ActorRef;
@@ -8,10 +16,10 @@ import com.example.synod.message.*;
 import java.util.*;
 
 public class Main {
-    public static int N = 100;
-    public static int f = 49;
-    public static float alpha = 0;
-    public static int t_le = 2;
+    public static int N = 3;
+    public static int f = 1;
+    public static double alpha = 0;
+    public static int t_le = 2000;
 
     public static void main(String[] args) throws InterruptedException {
 
@@ -23,12 +31,11 @@ public class Main {
             t_le = args[3] != null ? Integer.parseInt(args[3]) : t_le;
         }
 
-        
-
         // Instantiate an actor system
         final ActorSystem system = ActorSystem.create("system");
-        //system.log().info("System started with N=" + N);
-        
+
+        // system.log().info("System started with N=" + N);
+
         ArrayList<ActorRef> processes = new ArrayList<>();
 
         for (int i = 0; i < N; i++) {
@@ -38,20 +45,18 @@ public class Main {
 
         ActorRef observer = system.actorOf(Observer.createActor(N, alpha, t_le), "observer");
 
-        //give each process a view of all the other processes
+        // give each process a view of all the other processes
+
         Membership m = new Membership(processes, observer);
         for (ActorRef actor : processes) {
             actor.tell(m, ActorRef.noSender());
         }
 
-        // Sleep for a while to allow each process to register the reference to the others
-        //Thread.sleep(100);
-
         // Send LAUNCH to all processes
         for (ActorRef actor : processes) {
             actor.tell(new Launch(), ActorRef.noSender());
         }
-        
+
         // Select f processes at random and send them a CRASH message
         Collections.shuffle(processes);
         for (int i = 0; i < f; i++) {
@@ -68,17 +73,20 @@ public class Main {
             }
         }
 
-        //Wait before ending system
-        /*try {
-             waitBeforeTerminate();
-         } catch (InterruptedException exp) {
-             exp.printStackTrace();
-         } finally {
-             system.terminate();
-         }*/
+        // Wait before ending system
+        /* 
+        try {
+            waitBeforeTerminate();
+        } catch (InterruptedException exp) {
+            exp.printStackTrace();
+        } finally {
+            system.terminate();
+        }
+        */
+
     }
 
     public static void waitBeforeTerminate() throws InterruptedException {
-        Thread.sleep(5000);
+        Thread.sleep(150);
     }
 }
