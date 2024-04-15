@@ -126,7 +126,7 @@ public class Process extends UntypedAbstractActor {
                 getSender().tell(abort, getSelf());
             } else {
                 readballot = read.ballot;
-                // Send GATHER to senders
+                // send GATHER to senders
                 Gather gather = new Gather(read.ballot, imposeballot, estimate, this.i);
                 getSender().tell(gather, getSelf());
             }
