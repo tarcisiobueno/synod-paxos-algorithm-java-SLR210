@@ -53,7 +53,7 @@ public class Observer extends UntypedAbstractActor {
 
                 // Write latency to file
                 try {
-                    File file = new File("../dataAnalysis/data/latency_data_test.csv");
+                    File file = new File("../dataAnalysis/data/latency_data.csv");
                     PrintWriter out = new PrintWriter(new FileWriter(file, true));
                     if (file.length() == 0) {
                         out.println("n;alpha;t_le;latency");
