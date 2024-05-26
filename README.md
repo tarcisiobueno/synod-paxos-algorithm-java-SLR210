@@ -1,3 +1,9 @@
+# Project: Obstruction-Free Consensus and Paxos
+
+Project implemented by:
+
+Lucas PALMIRO DE FREITAS, Rafael ISSLER RODRIGUES, and Tarcisio DA SILVA BUENO.
+
 ## Problem Statement
 
 The aim of this project is to design and implement a state-machine replicated system built atop a consensus abstraction. More specifically, the problem addressed is how to implement an algorithm that solves obstruction-free consensus.
