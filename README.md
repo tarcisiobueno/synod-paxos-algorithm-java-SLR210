@@ -31,61 +31,6 @@ The environment settings in which the solution algorithm will run are as follows
 
 The implemented algorithm is based on the Synod algorithm, which is the “optimistic” consensus protocol in Paxos state-machine replication protocol.
 
-The pseudocode of the Synod algorithm is presented below:
-
-### Synod: code for process \( p_i \)
-
-**Local variables:**
-- \( ballot := i - n \)
-- \( proposal := nil \)
-- \( readballot := 0 \)
-- \( imposeballot := i - n \)
-- \( estimate := nil \)
-- \( states := [nil, 0]^n \)
-
-**Upon `propose(v)`**
-- \( proposal := v \)
-- \( ballot := ballot + n \)
-- \( states := [nil, 0]^n \)
-- send `[READ, ballot]` to all
-
-**Upon received `[READ, ballot']` from \( p_j \)**
-- if \( readballot > ballot' \) or \( imposeballot > ballot' \)
-  - send `[ABORT, ballot']` to \( p_j \)
-- else
-  - \( readballot := ballot' \)
-  - send `[GATHER, ballot', imposeballot, estimate]` to \( p_j \)
-
-**Upon received `[ABORT, ballot]` from some process**
-- return `abort`
-
-**Upon received `[GATHER, ballot, estballot, est]` from \( p_j \)**
-- \( states[p_j] := [estballot, est] \)
-
-**Upon \( |states| > \frac{n}{2} \)**
-- if \( \exists states[p_k] = [estballot, est] \) with \( estballot > 0 \)
-  - select \( states[p_k] = [estballot, est] \) with highest \( estballot \)
-  - \( proposal := est \)
-- \( states := [nil, 0]^n \)
-- send `[IMPOSE, ballot, proposal]` to all
-
-### Cont. of Synod: code for process \( p_i \)
-
-**Upon received `[IMPOSE, ballot', v]` from \( p_j \)**
-- if \( readballot > ballot' \) or \( imposeballot > ballot' \)
-  - send `[ABORT, ballot']` to \( p_j \)
-- else
-  - \( estimate := v \)
-  - \( imposeballot := ballot' \)
-  - send `[ACK, ballot']` to \( p_j \)
-
-**Upon received `[ACK, ballot]` from a majority**
-- send `[DECIDE, proposal]` to all
-
-**Upon received `[DECIDE, v]`**
-- send `[DECIDE, v]` to all
-- return `v`
-
 In addition to implementing Synod, we induce an arbitrary leader election in order to ensure the termination of the algorithm, i.e. that a value will eventually be decided. Termination is guaranteed since this arbitrarily chosen leader will, at some point, be the only correct process proposing and, due to the obstruction-free termination property guaranteed by Synod, this leader process will eventually decide.
 
 For the implementation, we used the AKKA framework which is based on the actor model, in which the actors represented by the processes exchange messages simultaneously. Thus, for each type of message present in the Synod algorithm, we created a class with its own parameters in brackets:
