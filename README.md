@@ -54,6 +54,7 @@ In addition, we have included other types of messages that are used by the `Main
 From this, Figure \ref{fig:main} presents a diagram showing in what order and to whom the previous control messages are sent by the `Main` class:
 
 ![Sequence Diagram for Main class](images/main.png)
+
 *Figure 1: Sequence Diagram for `Main` class*
 
 In the previous diagram, we represented as the time to election (\( tle \)) the time period waited by the `Main` class between the assignment of \( f \) faulty processes, which is implemented by sending them `Crash` messages, and the leader election, which here is implemented by sending `Hold` messages to all processes except the leader so that they stop proposing.
@@ -61,6 +62,7 @@ In the previous diagram, we represented as the time to election (\( tle \)) the 
 In Figure \ref{fig:phases}, we can see a basic run of the algorithm which can be divided into three phases: `READ` phase, `IMPOSE` phase, and `DECIDE` phase. In this basic run, we assume that only one process proposes. First, process \( P_1 \) sends (including itself) a `READ` message containing its ballot number. Processes can respond with an `ABORT` message if they have seen a greater ballot or with a `GATHER` otherwise. In this case, they all respond with `GATHER` messages. \( P_1 \) then receives a majority of `GATHER` messages and checks if there are non-NULL values of estballot, if so, it picks the value associated with the highest estballot. Otherwise, it picks its own value. It then proceeds to send `IMPOSE` messages to all processes. When processes receive this message, they can send an `ABORT` message or an `ACK` message based on the conditions of the pseudocode presented above. In our case, all processes send an `ACK` message. Once \( P_1 \) receives a majority of messages of this type, it decides and sends the message `DECIDE` to all the processes. Once processes receive `DECIDE`, they also send this message to every other process.
 
 ![Phases of the algorithm](images/phases.png)
+
 *Figure 2: Phases of the algorithm*
 
 The `Process` class encapsulates the behavior that each process in the system must adhere to. This behavior is outlined in the pseudocode of the Synod algorithm presented earlier. Below, we describe some important details about our implementation of the algorithm.
