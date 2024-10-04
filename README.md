@@ -1,4 +1,4 @@
-# Project: Obstruction-Free Consensus and Paxos
+# Project: Obstruction-Free Consensus and Paxos - Implemented in JAVA
 
 Project implemented by:
 
